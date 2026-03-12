@@ -1,6 +1,6 @@
-# laha-payment-portal
+# upi-payment-portal
 
-A minimal payment link portal intended to serve `pay.example.com`-style domains. Given a token in the URL, it looks up a UPI payment link in the database and redirects the user to the appropriate UPI intent. Majorly written using GitHub Copilot, with some manual adjustments.
+A minimal UPI payment portal intended to serve `pay.example.com`-style domains. Given a token in the URL, it looks up a UPI payment link in the database and redirects the user to the appropriate UPI intent. Majorly written using GitHub Copilot, with some manual adjustments.
 
 ## Architecture
 
