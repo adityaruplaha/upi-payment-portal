@@ -36,7 +36,7 @@
 </script>
 
 <svelte:head>
-	<title>Pay {data.payeeName}</title>
+	<title>Pay {data.payeeName}{data.transactionNote ? ` for ${data.transactionNote}` : ''}</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
 	<link
