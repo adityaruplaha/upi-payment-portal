@@ -1,0 +1,19 @@
+{
+	"name": "laha-payment-portal",
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	"compatibility_flags": [
+		"nodejs_als"
+	],
+	"compatibility_date": "2026-03-11",
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare"
+	},
+	"d1_databases": [
+		{
+			"binding": "payments",
+			"database_name": "payments",
+			"database_id": "74b98ffe-1722-42bf-9b98-c2fb7a96d9ac"
+		}
+	]
+}
