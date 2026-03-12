@@ -1,70 +1,56 @@
-# sv
+# laha-payment-portal
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A minimal payment link portal intended to serve `pay.example.com`-style domains. Given a token in the URL, it looks up a UPI payment link in the database and redirects the user to the appropriate UPI intent. Majorly written using GitHub Copilot, with some manual adjustments.
 
-## Creating a project
+## Architecture
 
-If you're seeing this, you've probably already done this step. Congrats!
+**Runtime:** SvelteKit on Cloudflare Workers, using [adapter-cloudflare](https://kit.svelte.dev/docs/adapter-cloudflare).
 
-```sh
-# create a new project
-npx sv create my-app
-```
+**Database:** Cloudflare D1 (SQLite). Two tables:
 
-To recreate this project with the same configuration:
+- `beneficiaries` — UPI payees (`id`, `payee_name`, `vpa`, `is_active`)
+- `payment_links` — tokens scoped to a domain, pointing to a beneficiary with an optional amount and note (`token`, `domain`, `beneficiary_id`, `amount`, `transaction_note`, `is_active`)
 
-```sh
-# recreate this project
-bun x sv@0.12.5 create --template minimal --types ts --add prettier eslint --install bun laha-payment-portal
-```
+**Request flow:** `pay.example.com/<token>` → `[token]/+page.server.ts` loads the matching payment link from D1 → the page renders a UPI QR code and deep-link button (client-side only — `upi-intents` crashes on SSR) for the user to tap.
 
-## Developing
+**Domain matching:** the `domain` column stores the *base* domain (e.g. `example.com`), not the `pay.` subdomain. The server strips the `pay.` prefix from the hostname before querying, so make sure to store `example.com` when adding payment links, not `pay.example.com`.
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+The server routes are **read-only**. All writes go through the `db:admin` script.
 
-```sh
-npm run dev
+## db:admin
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
+An interactive CLI for managing D1 data remotely via Wrangler. Always writes to the remote database (`--remote`). Requires `wrangler` to be authenticated.
 
 ```sh
-npm run build
+bun run db:admin
 ```
 
-You can preview the production build with `npm run preview`.
+Available commands (all interactive, with prompts):
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+| Command | Description |
+|---|---|
+| `list-beneficiaries` | List all beneficiaries |
+| `add-beneficiary` | Add a new UPI payee |
+| `edit-beneficiary` | Edit an existing payee |
+| `delete-beneficiary` | Deactivate a payee |
+| `list-payment-links` | List all payment links |
+| `add-payment-link` | Create a new token → payee mapping |
+| `edit-payment-link` | Edit an existing payment link |
+| `delete-payment-link` | Deactivate a payment link |
 
-## D1 Admin Writes (Remote Only)
+Override the D1 database name (default: `payments`) with the `D1_DB_NAME` environment variable.
 
-Write operations are done through a helper script and Wrangler, not through Svelte routes.
-
-Run help:
+## Dev
 
 ```sh
-bun run db:admin-help
+bun install
+bun run dev
 ```
 
-Insert a beneficiary:
+To bootstrap the D1 schema on a new database:
 
 ```sh
-bun run db:add-beneficiary -- --id=ben_001 --payee-name="Laha Stores" --vpa=laha@upi
+wrangler d1 execute payments --file=db_schema.sql --remote
 ```
 
-Insert a payment link:
-
-```sh
-bun run db:add-payment-link -- --token=abc123 --domain=pay.example.com --beneficiary-id=ben_001 --amount=499 --transaction-note="Order 42"
-```
-
-Notes:
-
-- The script always uses `wrangler d1 execute <db> --remote`.
-- Override the default DB name (`payments`) with `D1_DB_NAME=<name>`.
-- Keep Svelte server code read-only (SELECT queries only).
+Deploy with `bun run deploy` (via Wrangler).
