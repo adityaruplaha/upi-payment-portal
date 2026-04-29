@@ -39,7 +39,6 @@
 		"wrangler": "^4.72.0"
 	},
 	"dependencies": {
-		"qrcode": "^1.5.4",
-		"upi-intents": "^0.1.0"
+		"qrcode": "^1.5.4"
 	}
 }
