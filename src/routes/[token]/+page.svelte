@@ -1,31 +1,14 @@
 <script lang="ts">
 	import * as QRCode from 'qrcode';
+	import { buildUpiUri, formatAmount } from '$lib/upi';
 	import type { PageData } from './$types';
 	import './page.css';
 
 	export let data: PageData;
 
-	const amountValue =
-		data.amount !== null && data.amount !== undefined ? String(data.amount) : undefined;
+	const amountValue = formatAmount(data.amount);
 	const paymentLabel = data.domain;
-	const upiUri = buildUpiUri();
-
-	function buildUpiUri() {
-		const uri = new URL('upi://pay');
-		uri.searchParams.set('pa', data.vpa);
-		uri.searchParams.set('pn', data.payeeName);
-		uri.searchParams.set('cu', 'INR');
-
-		if (amountValue) {
-			uri.searchParams.set('am', amountValue);
-		}
-
-		if (data.transactionNote) {
-			uri.searchParams.set('tn', data.transactionNote);
-		}
-
-		return uri.toString().replace(/\+/g, '%20');
-	}
+	const upiUri = buildUpiUri(data);
 
 	const qrSvgPromise = QRCode.toString(upiUri, {
 		type: 'svg',

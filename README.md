@@ -19,26 +19,31 @@ The server routes are **read-only**. All writes go through the `db:admin` script
 
 ## db:admin
 
-An interactive CLI for managing D1 data remotely via Wrangler. Always writes to the remote database (`--remote`). Requires `wrangler` to be authenticated.
+A CLI for managing beneficiaries and payment links, run through Wrangler.
 
 ```sh
-bun run db:admin
+bun run db:admin --help
+bun run db:admin link add fixed example.com --beneficiary <id> --amount 500 --note "Class fee"
 ```
 
-Available commands (all interactive, with prompts):
+It works on the local database that `bun run dev` uses, and on the live one with `--remote`, which requires `wrangler` to be authenticated. In a terminal, anything left out is asked for; elsewhere every value must be given, with `--yes` to confirm deactivating or deleting.
 
 | Command | Description |
 |---|---|
-| `list-beneficiaries` | List all beneficiaries |
-| `add-beneficiary` | Add a new UPI payee |
-| `edit-beneficiary` | Edit an existing payee |
-| `delete-beneficiary` | Deactivate a payee |
-| `list-payment-links` | List all payment links |
-| `add-payment-link` | Create a new token → payee mapping |
-| `edit-payment-link` | Edit an existing payment link |
-| `delete-payment-link` | Deactivate a payment link |
+| `beneficiary list` | List all beneficiaries |
+| `beneficiary add` | Add a UPI payee; its ID is a generated ULID |
+| `beneficiary edit` | Change a payee's name, UPI ID, or status |
+| `beneficiary deactivate` | Mark a payee inactive |
+| `beneficiary delete` | Delete a payee that has no payment links |
+| `link list` | List all payment links, or those on one `--domain` |
+| `link add` | Create a token → payee mapping on a domain |
+| `link edit` | Change a payment link's payee, amount, note, or status |
+| `link deactivate` | Make a payment link answer 404 |
+| `link delete` | Delete a payment link |
 
-Override the D1 database name (default: `payments`) with the `D1_DB_NAME` environment variable.
+Deactivating a payee does not stop its payment links; deactivate those too.
+
+Override the D1 database name (default: `payments`) with `--database` or the `D1_DB_NAME` environment variable.
 
 ## Dev
 
@@ -46,6 +51,8 @@ Override the D1 database name (default: `payments`) with the `D1_DB_NAME` enviro
 bun install
 bun run dev
 ```
+
+Run the tests with `bun run test`.
 
 To bootstrap the D1 schema on a new database:
 

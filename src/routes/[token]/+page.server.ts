@@ -1,5 +1,6 @@
 // src/routes/[token]/+page.server.ts
 import { error } from '@sveltejs/kit';
+import { findPaymentLink } from '$lib/server/payment-links';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, url, platform }) => {
@@ -10,26 +11,11 @@ export const load: PageServerLoad = async ({ params, url, platform }) => {
 		throw error(500, 'Database connection is missing.');
 	}
 
-	const domain = url.hostname.replace(/^pay\./i, '') || url.hostname;
+	const link = await findPaymentLink(db, params.token, url.hostname);
 
-	const stmt = db.prepare(`
-        SELECT p.amount, p.transaction_note, b.payee_name, b.vpa
-        FROM payment_links p
-        JOIN beneficiaries b ON p.beneficiary_id = b.id
-        WHERE p.token = ? AND p.domain = ? AND p.is_active = 1
-    `);
-
-	const result = await stmt.bind(params.token, domain).first();
-
-	if (!result) {
+	if (!link) {
 		throw error(404, 'Payment link is either inactive or does not exist for this domain.');
 	}
 
-	return {
-		domain,
-		payeeName: result.payee_name,
-		vpa: result.vpa,
-		amount: result.amount,
-		transactionNote: result.transaction_note
-	};
+	return link;
 };
