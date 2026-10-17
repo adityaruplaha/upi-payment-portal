@@ -48,14 +48,26 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       # The root redirects to the bare domain, and a token that does not exist answers 404.
+      # arl.dance has Bot Fight Mode on, which challenges the runner, so there a Cloudflare challenge
+      # also passes: it shows the hostname reaches Cloudflare, and the Worker is the same one
+      # pay.adityaruplaha.me reaches.
       - name: Check the live hostnames
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
           sleep 10
+          check() {
+            host=$1 path=$2 expected=$3
+            code=$(curl -s -o /dev/null -D headers.txt -w '%{http_code}' "https://$host$path")
+            if [ "$code" = "$expected" ]; then
+              echo "$host$path $code"
+            elif [ "$host" = pay.arl.dance ] && [ "$code" = 403 ] && grep -qi '^cf-mitigated: *challenge' headers.txt; then
+              echo "$host$path $code, a Cloudflare challenge"
+            else
+              echo "$host$path $code, expected $expected"
+              return 1
+            fi
+          }
           for host in pay.adityaruplaha.me pay.arl.dance; do
-            root=$(curl -s -o /dev/null -w '%{http_code}' "https://$host/?v=$GITHUB_RUN_ID")
-            missing=$(curl -s -o /dev/null -w '%{http_code}' "https://$host/no-such-token-$GITHUB_RUN_ID")
-            echo "$host / $root, unknown token $missing"
-            test "$root" = 307
-            test "$missing" = 404
+            check "$host" "/?v=$GITHUB_RUN_ID" 307
+            check "$host" "/no-such-token-$GITHUB_RUN_ID" 404
           done
