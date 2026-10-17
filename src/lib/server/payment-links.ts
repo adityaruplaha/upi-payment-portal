@@ -21,7 +21,7 @@ export interface PaymentLink {
 	transactionNote: string | null;
 }
 
-/** The active payment link for a token on a hostname, or null. */
+/** The active payment link for a token on a hostname, to an active beneficiary, or null. */
 export async function findPaymentLink(
 	db: Queryable,
 	token: string,
@@ -34,7 +34,7 @@ export async function findPaymentLink(
 			`SELECT p.amount, p.transaction_note, b.payee_name, b.vpa
 			FROM payment_links p
 			JOIN beneficiaries b ON p.beneficiary_id = b.id
-			WHERE p.token = ? AND p.domain = ? AND p.is_active = 1`
+			WHERE p.token = ? AND p.domain = ? AND p.is_active = 1 AND b.is_active = 1`
 		)
 		.bind(token, domain)
 		.first<{

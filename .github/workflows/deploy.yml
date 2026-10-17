@@ -1,0 +1,61 @@
+# Test, type-check and build every push and pull request, and on a push to main or a manual run on
+# main, deploy to Cloudflare Workers and check that both hostnames answer.
+# The deploy needs the repository secret CLOUDFLARE_API_TOKEN, a Cloudflare API token made from the
+# "Edit Cloudflare Workers" template; the account ID is in wrangler.jsonc.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time, and a newer push waits for the running one rather than cancelling it.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Test
+        run: bun test
+
+      - name: Type-check
+        run: bun run check -- --fail-on-warnings
+
+      - name: Build
+        run: bun run build
+
+      - name: Deploy
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: bunx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      # The root redirects to the bare domain, and a token that does not exist answers 404.
+      - name: Check the live hostnames
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          sleep 10
+          for host in pay.adityaruplaha.me pay.arl.dance; do
+            root=$(curl -s -o /dev/null -w '%{http_code}' "https://$host/?v=$GITHUB_RUN_ID")
+            missing=$(curl -s -o /dev/null -w '%{http_code}' "https://$host/no-such-token-$GITHUB_RUN_ID")
+            echo "$host / $root, unknown token $missing"
+            test "$root" = 307
+            test "$missing" = 404
+          done

@@ -1,14 +1,18 @@
 {
+	"$schema": "./node_modules/wrangler/config-schema.json",
 	"name": "upi-payment-portal",
+	"account_id": "92089185ab2b3077723fb0e134b82bc4",
+	// pay.adityaruplaha.me and pay.arl.dance are attached to this Worker as custom domains in
+	// Cloudflare, not here: with routes in this file, `wrangler dev` rewrites every request to the
+	// first route's hostname, so links on other domains could not be tried locally.
 	"main": ".svelte-kit/cloudflare/_worker.js",
-	"compatibility_flags": [
-		"nodejs_als"
-	],
-	"compatibility_date": "2026-03-11",
+	"compatibility_flags": ["nodejs_als"],
+	"compatibility_date": "2026-09-26",
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".svelte-kit/cloudflare"
 	},
+	"observability": { "enabled": true },
 	"d1_databases": [
 		{
 			"binding": "payments",

@@ -9,6 +9,7 @@ import { cancel, confirm, isCancel, log, select, text } from '@clack/prompts';
 import chalk from 'chalk';
 import { Command, Option } from 'commander';
 import { ulid } from 'ulid';
+import { formatAmount } from '../src/lib/upi.ts';
 
 const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
 
@@ -275,17 +276,20 @@ interface Link {
 	amount: number | null;
 	transaction_note: string | null;
 	is_active: number;
+	payee_active: number;
 }
 
-const LINK_COLUMNS = `p.token, p.domain, p.beneficiary_id, b.payee_name, p.amount, p.transaction_note, p.is_active
+const LINK_COLUMNS = `p.token, p.domain, p.beneficiary_id, b.payee_name, p.amount, p.transaction_note, p.is_active,
+	b.is_active AS payee_active
 	FROM payment_links p JOIN beneficiaries b ON b.id = p.beneficiary_id`;
 
 function describeLink(l: Link): string {
 	return [
 		`${chalk.cyan(`pay.${l.domain}/${l.token}`)}  ${l.payee_name}`,
-		l.amount != null ? chalk.magenta(`₹${l.amount}`) : chalk.dim('any amount'),
+		l.amount != null ? chalk.magenta(`₹${formatAmount(l.amount)}`) : chalk.dim('any amount'),
 		l.transaction_note ? chalk.dim(`"${l.transaction_note}"`) : '',
-		status(l.is_active)
+		status(l.is_active),
+		l.is_active && !l.payee_active ? chalk.red('(payee inactive, so it answers 404)') : ''
 	]
 		.filter(Boolean)
 		.join('  ');

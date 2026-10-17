@@ -5,7 +5,7 @@ export interface UpiPayment {
 	transactionNote?: string | null;
 }
 
-/** The `upi://pay` URL that the QR code and the Pay Now button carry. */
+/** The `upi://pay` URL that the QR code and the payment button carry. */
 export function buildUpiUri(payment: UpiPayment): string {
 	const uri = new URL('upi://pay');
 	uri.searchParams.set('pa', payment.vpa);
@@ -24,7 +24,7 @@ export function buildUpiUri(payment: UpiPayment): string {
 	return uri.toString().replace(/\+/g, '%20');
 }
 
-/** The amount as it is shown and sent, or undefined when there is none. */
+/** The amount as it is shown and sent, with two decimals, or undefined when there is none. */
 export function formatAmount(amount: number | null | undefined): string | undefined {
-	return amount !== null && amount !== undefined ? String(amount) : undefined;
+	return amount !== null && amount !== undefined ? amount.toFixed(2) : undefined;
 }

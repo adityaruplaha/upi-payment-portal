@@ -76,8 +76,7 @@ describe('findPaymentLink', () => {
 		expect(await findPaymentLink(db, 'FIXED', 'pay.example.com')).toBeNull();
 	});
 
-	// The lookup does not check whether the beneficiary is active, so this fails today.
-	it.skip('does not find a link to an inactive beneficiary', async () => {
+	it('does not find a link to an inactive beneficiary', async () => {
 		expect(await findPaymentLink(db, 'payee-off', 'pay.example.com')).toBeNull();
 	});
 });
